@@ -40,6 +40,16 @@ export default function Footer() {
                 Contracts
               </Link>
             </li>
+            <li>
+              <Link className="link" href="/tokens">
+                Tokens
+              </Link>
+            </li>
+            <li>
+              <Link className="link" href="/top-accounts">
+                Top Accounts
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
@@ -56,13 +66,23 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <Link className="link" href="/charts">
-                Charts
+              <Link className="link" href="/verify-contract">
+                Verify Contract
               </Link>
             </li>
             <li>
-              <Link className="link" href="/network">
-                Network Status
+              <Link className="link" href="/verified-contracts">
+                Verified Contracts
+              </Link>
+            </li>
+            <li>
+              <Link className="link" href="/gastracker">
+                Gas Tracker
+              </Link>
+            </li>
+            <li>
+              <Link className="link" href="/unitconverter">
+                Unit Converter
               </Link>
             </li>
             <li>

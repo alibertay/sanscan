@@ -19,9 +19,11 @@ function parseParams(text: string): unknown[] {
 export default function ContractConsole({
   contractId,
   functions,
+  mode = "both",
 }: {
   contractId: string;
   functions: string[];
+  mode?: "read" | "write" | "both";
 }) {
   const { wallet } = useWallet();
   const [functionName, setFunctionName] = useState(functions[0] ?? "");
@@ -108,6 +110,7 @@ export default function ContractConsole({
 
   return (
     <div className="space-y-4">
+      {mode !== "write" && (
       <form className="card" onSubmit={read}>
         <div className="card-header">
           <h2 className="card-title">Read Contract</h2>
@@ -150,14 +153,16 @@ export default function ContractConsole({
           )}
         </div>
       </form>
+      )}
 
-      {result !== null && (
+      {mode !== "write" && result !== null && (
         <div className="card p-4">
           <p className="mb-2 text-[13px] font-semibold text-ink-900">Result</p>
           <JsonBlock value={result} />
         </div>
       )}
 
+      {mode !== "read" && (
       <form className="card" onSubmit={write}>
         <div className="card-header">
           <h2 className="card-title">Write Contract</h2>
@@ -213,6 +218,7 @@ export default function ContractConsole({
           )}
         </div>
       </form>
+      )}
 
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">

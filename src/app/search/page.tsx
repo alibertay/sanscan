@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import Breadcrumb from "@/components/Breadcrumb";
-import { ensureIndexer, getBlockByHash, getTx } from "@/lib/indexer";
+import { ensureIndexer, getBlockByHash, getTx, searchTokens } from "@/lib/indexer";
 import { isAddress, isTxHash } from "@/lib/format";
 import { san } from "@/lib/rpc";
 
@@ -34,6 +34,8 @@ export default async function SearchPage({
       const live = await san.tx(query);
       if (live) redirect(`/tx/${query}`);
     }
+    const tokenMatch = searchTokens(query)[0];
+    if (tokenMatch) redirect(`/token/${encodeURIComponent(tokenMatch.id)}`);
     const contracts = await san.contracts();
     if (contracts.data?.contracts?.includes(query)) {
       redirect(`/contract/${encodeURIComponent(query)}`);

@@ -179,12 +179,101 @@ export interface IndexedTx {
   label: string;
   contractId: string | null;
   functionName: string | null;
+  params: unknown[] | null;
+  contractCode: string | null;
+  contractCodeHash: string | null;
+  language: string | null;
   gasLimit: number;
   gasPrice: number;
   status: string | null;
   gasUsed: number | null;
   logs: LogEntry[] | null;
   error: string | null;
+}
+
+export type TokenStandard = "SANRC20" | "SANRC721";
+
+export interface TokenRecord {
+  id: string;
+  standard: TokenStandard;
+  functions: string[];
+  name: string | null;
+  symbol: string | null;
+  decimals: number | null;
+  totalSupply: string | null;
+  owner: string | null;
+  deployTx: string | null;
+  deployBlock: number | null;
+  deployTimestamp: number | null;
+  deployer: string | null;
+  transfers: number;
+  holders: number;
+  verified: boolean;
+}
+
+export type TokenEventName =
+  | "Transfer"
+  | "Mint"
+  | "Burn"
+  | "Approval"
+  | "ApprovalForAll"
+  | "Init";
+
+export interface TokenEvent {
+  contractId: string;
+  txId: string;
+  block: number;
+  index: number;
+  ts: number;
+  function: string;
+  event: TokenEventName;
+  from: string | null;
+  to: string | null;
+  amount: string | null;
+  tokenId: string | null;
+  ok: boolean;
+}
+
+export interface TokenTransferRow extends TokenEvent {
+  standard: TokenStandard | null;
+  symbol: string | null;
+  name: string | null;
+}
+
+export interface HolderRow {
+  address: string;
+  balance: string;
+  share: string;
+}
+
+export interface VerificationRecord {
+  contractId: string;
+  language: "pena" | "asm";
+  source: string;
+  sourceHash: string;
+  matchType: "exact" | "bytecode";
+  deployTxId: string | null;
+  deployer: string | null;
+  verifiedAt: number;
+  compiler: string;
+}
+
+export interface GasStats {
+  baseFee: number;
+  minGasPrice: number;
+  averageGasPrice: number | null;
+  medianFee: string | null;
+  transferFeeEstimate: string | null;
+  executionCount: number;
+  collectedFeeUnits: string;
+  gasUsed: number;
+  latestBlocks: {
+    height: number;
+    timestamp: number;
+    txs: number;
+    gasUsed: number;
+    feeUnits: string;
+  }[];
 }
 
 export interface AddressStats {

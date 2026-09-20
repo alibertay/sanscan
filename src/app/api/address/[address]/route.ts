@@ -1,7 +1,13 @@
 import type { NextRequest } from "next/server";
 
 import { errorJson, intParam, json, ready } from "@/lib/api";
-import { getAddressStats, getHealth, listTxs } from "@/lib/indexer";
+import {
+  getAddressStats,
+  getAddressTokenHoldings,
+  getHealth,
+  listTokenEvents,
+  listTxs,
+} from "@/lib/indexer";
 import { isAddress } from "@/lib/format";
 import { san } from "@/lib/rpc";
 
@@ -28,10 +34,11 @@ export async function GET(
     Promise.resolve(getHealth()),
   ]);
 
-  const validator =
-    validators?.validators.find((row) => row.address === normalized) ?? null;
+  const validator = validators?.validators.find((row) => row.address === normalized) ?? null;
   const stats = getAddressStats(normalized);
   const txs = listTxs((page - 1) * limit, limit, { address: normalized });
+  const tokenTransfers = listTokenEvents({ address: normalized, offset: 0, limit: 1 });
+  const holdings = getAddressTokenHoldings(normalized);
 
   return json({
     address: normalized,
@@ -43,6 +50,11 @@ export async function GET(
     total: txs.total,
     page,
     limit,
+    tokenTransferTotal: tokenTransfers.total,
+    tokenHoldings: holdings.map((row) => ({
+      token: row.token,
+      balance: row.balance,
+    })),
     txs: txs.items,
   });
 }

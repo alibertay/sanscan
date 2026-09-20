@@ -21,6 +21,18 @@ address history and charts, and exposes everything through a JSON API of its own
 
 - **Etherscan-style UI** — latest blocks and transactions, block/tx detail pages,
   address pages with tabs, validators, contract pages, charts, network status.
+- **Tokens** — SANRC20 and SANRC721 detection from the deployed PENA source,
+  token pages with metadata, transfers (Transfer/Mint/Burn/Approval events),
+  holders ranked by balance, NFT inventory and per-address token holdings.
+- **Contract verification** (no account) — publish a contract's source by proving
+  it matches the code signed in its deployment transaction; verified contracts
+  get a source view, badge, verified-contracts list and function-aware
+  read/write tabs.
+- **Decoded transactions** — contract call parameters are decoded with the
+  parameter names from the deployed source, token movements are summarized on
+  the transaction page, and print logs are shown as events.
+- **Tools** — gas tracker with fee calculator, SAN unit converter, top accounts,
+  CSV exports for transactions and token transfers everywhere.
 - **Local indexer** — SAN nodes have no address-history endpoint, so sanscan
   syncs blocks through `/sync` into an on-disk NDJSON index. Address history,
   top addresses, fee totals and charts are derived from it. Reorgs and node
@@ -102,9 +114,12 @@ SAN_RPC_URL=http://host.docker.internal:8000 docker compose up -d --build
 | `/blocks`, `/block/[height]` | Block list and block detail (roots, proposer, reward) |
 | `/txs`, `/tx/[id]` | Transaction list with type tabs; detail with receipt, logs, raw payload |
 | `/pending` | Mempool |
-| `/address/[address]` | Balance, nonce, validator stake, stats, history, Merkle proof |
+| `/address/[address]` | Balance, nonce, stake, token holdings, history + token/NFT transfer tabs, Merkle proof |
 | `/validators` | Active set, stake shares, consensus parameters, evidence |
-| `/contracts`, `/contract/[id]` | Deployed contracts, PENA source, read/write console |
+| `/tokens`, `/token/[id]` | Token list; token page with transfers, holders, NFT inventory, code, read/write |
+| `/contracts`, `/contract/[id]` | Deployed contracts, code/read/write/transactions/events tabs |
+| `/verify-contract`, `/verified-contracts` | Source verification form and verified list |
+| `/top-accounts`, `/gastracker`, `/unitconverter` | Etherscan-style tools |
 | `/faucet` | Request testnet SAN, recent grants |
 | `/wallet` | Generate/import ML-DSA-44 wallet, faucet, send SAN, staking actions |
 | `/charts` | Blocks, transactions, gas, active addresses, supply |
@@ -123,8 +138,20 @@ SAN_RPC_URL=http://host.docker.internal:8000 docker compose up -d --build
 | GET | `/api/tx/{tx_id}` | Transaction detail (indexed + live + receipt) |
 | GET | `/api/address/{address}?page=` | Account, stake, stats, history |
 | GET | `/api/validators` | Validator set + evidence |
-| GET | `/api/contracts` | Contract ids with deploy metadata |
+| GET | `/api/contracts` | Contract ids with deploy metadata, functions, token/verify flags |
 | POST | `/api/contract/query` | Read-only PENA call |
+| GET | `/api/tokens` | Detected SANRC20/SANRC721 tokens |
+| GET | `/api/token/{id}` | Token metadata, transfers and holders |
+| GET | `/api/token/{id}/transfers` | Paginated token events |
+| GET | `/api/token/{id}/holders` | Paginated holders with shares |
+| GET | `/api/token/{id}/inventory` | SANRC721 token ids and owners |
+| POST | `/api/verify-contract` | Verify source against the deployment tx |
+| GET | `/api/verify-contract/{id}` | Verification record |
+| GET | `/api/verified-contracts` | All verification records |
+| GET | `/api/top-accounts` | Addresses ranked by live balance |
+| GET | `/api/gas` | Base fee, paid prices, median fee, estimate |
+| GET | `/api/export/txs` | CSV export of filtered transactions |
+| GET | `/api/export/token-transfers` | CSV export of token events |
 | GET | `/api/mempool` | Pending tx ids |
 | GET | `/api/charts?window=24h\|7d\|30d` | Aggregated series + supply |
 | GET | `/api/network` | Health, finality, genesis, peers, metrics |
@@ -148,10 +175,18 @@ npm run e2e                          # http://127.0.0.1:3000
 node scripts/e2e.mjs http://host:3000
 ```
 
-The script generates two wallets, requests faucet funds through
-`/api/faucet`, signs a transfer with `@noble/post-quantum`, waits for the
-explorer to index it, verifies balances and address history, then deploys a
-PENA contract and reads/writes it — 16 end-to-end checks in total.
+The script generates wallets, requests faucet funds through `/api/faucet`,
+signs transfers with `@noble/post-quantum`, waits for the explorer to index
+them, verifies balances and address history, deploys and drives a PENA contract,
+deploys **SANRC20** and **SANRC721** tokens (init, transfer, mint), checks
+holders and NFT inventory, verifies a contract source (and rejects a tampered
+one), and exercises CSV exports, the gas tracker and top accounts — 35
+end-to-end checks in total.
+
+> Fees: every signed transaction carries a full ML-DSA-44 public key and
+> signature, so an execution costs roughly 80 SAN at the minimum fee rate. Run
+> the node faucet with a few hundred SAN per grant for this test, e.g.
+> `--faucet --faucet-amount 500 --faucet-max 1000`.
 
 Type-check:
 
@@ -173,6 +208,27 @@ src/
     format.ts      amounts, units, hashes, times
 scripts/e2e.mjs    end-to-end verification
 ```
+
+## How token indexing works
+
+SAN contracts are PENA programs, not EVM bytecode, so there is no ERC-20 ABI to
+query. Sanscan treats a contract as a token when its deployed source exposes the
+canonical function set (`transfer`/`balanceOf`/`totalSupply` → SANRC20;
+`ownerOf`/`balanceOf`/`transferFrom` → SANRC721, matching
+`PENA/examples/SANRC20` and `SANRC721`). Events are derived from the signed
+call parameters (positional per function) combined with the contract's `print`
+logs (`TRANSFER_OK` / `MINT_OK` / …), then replayed in order to compute holder
+balances and 721 ownership. Contracts that follow different conventions are
+still explorable, but are not classified as tokens.
+
+## How contract verification works
+
+The signed deployment transaction contains the exact source (or PASM bytecode).
+Verification hashes the submitted source and compares it with that on-chain
+deployment (line endings and trailing whitespace are normalized) — an exact
+match is published as a verified contract. This proves *source ↔ deployment*
+identity; it does not recompile the source, because every SAN node compiles it
+at execution time from the same signed bytes.
 
 ## Notes
 

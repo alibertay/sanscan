@@ -8,8 +8,15 @@ import { StatusBadge } from "@/components/Badges";
 import { AddressLink, ContractLink } from "@/components/Links";
 import JsonBlock from "@/components/JsonBlock";
 import TimeAgo from "@/components/TimeAgo";
-import { ensureIndexer, getTx } from "@/lib/indexer";
+import {
+  ensureIndexer,
+  getContractSignatures,
+  getToken,
+  getTokenEventForTx,
+  getTx,
+} from "@/lib/indexer";
 import { formatSan, formatUtc, fromUnits } from "@/lib/format";
+import { formatTokenAmount } from "@/lib/tokens";
 import { san } from "@/lib/rpc";
 import type { LogEntry, TxPayload } from "@/lib/types";
 
@@ -51,6 +58,14 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
   const value = indexed?.value ?? String(payload?.value ?? "0");
   const feeUnits = indexed?.fee ?? (typeof payload?.fee === "number" ? payload.fee : 0);
   const logs: LogEntry[] = indexed?.logs ?? ((receipt?.logs as LogEntry[] | undefined) ?? []);
+  const tokenEvent = getTokenEventForTx(id);
+  const token = tokenEvent ? getToken(tokenEvent.contractId) : null;
+  const signatures = indexed?.contractId ? getContractSignatures(indexed.contractId) : {};
+  const paramNames =
+    indexed?.functionName && signatures[indexed.functionName]
+      ? signatures[indexed.functionName]
+      : [];
+  const callParams = indexed?.params ?? [];
 
   return (
     <div className="space-y-4">
@@ -159,6 +174,92 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
         </div>
       </section>
 
+      {tokenEvent && (
+        <section className="card">
+          <div className="card-header">
+            <h2 className="card-title">Token {tokenEvent.event}</h2>
+            {token && <span className="badge badge-purple">{token.standard}</span>}
+          </div>
+          <div className="p-4 text-[13px] text-gray-700">
+            {tokenEvent.event === "Transfer" || tokenEvent.event === "Mint" || tokenEvent.event === "Burn" ? (
+              <p>
+                {tokenEvent.event === "Mint" ? "Minted" : tokenEvent.event === "Burn" ? "Burned" : "Transferred"}{" "}
+                <strong>
+                  {tokenEvent.amount ? formatTokenAmount(tokenEvent.amount) : tokenEvent.tokenId ? `Token #${tokenEvent.tokenId}` : "—"}
+                </strong>{" "}
+                {token?.symbol ? token.symbol : `of ${tokenEvent.contractId}`}{" "}
+                {tokenEvent.from && (
+                  <>
+                    from <AddressLink address={tokenEvent.from} size={8} />
+                  </>
+                )}{" "}
+                {tokenEvent.to && (
+                  <>
+                    to <AddressLink address={tokenEvent.to} size={8} />
+                  </>
+                )}
+                {!tokenEvent.ok && <span className="badge badge-red ml-2">Reverted by contract</span>}
+              </p>
+            ) : (
+              <p>
+                {tokenEvent.event} on{" "}
+                <ContractLink contractId={tokenEvent.contractId} /> by{" "}
+                <AddressLink address={tokenEvent.from} size={8} />
+              </p>
+            )}
+            <p className="mt-1 text-[12px] text-gray-500">
+              Derived from the signed call parameters and the contract&apos;s print logs.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {indexed?.contractId && indexed.functionName && (
+        <section className="card">
+          <div className="card-header">
+            <h2 className="card-title">Decoded Input</h2>
+            <span className="text-[12px] text-gray-500">
+              parameters decoded from the deployed PENA signature
+            </span>
+          </div>
+          <div className="p-4">
+            <p className="mono break-all text-[13px]">
+              <ContractLink contractId={indexed.contractId} />
+              {". "}
+              {indexed.functionName}(
+              {callParams.length > 0
+                ? callParams
+                    .map((_, position) => paramNames[position] ?? `param${position}`)
+                    .join(", ")
+                : ""}
+              )
+            </p>
+            {callParams.length > 0 && (
+              <table className="table-base mt-3">
+                <thead>
+                  <tr>
+                    <th style={{ width: 60 }}>#</th>
+                    <th style={{ width: 180 }}>Name</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {callParams.map((value, position) => (
+                    <tr key={position}>
+                      <td className="text-gray-500">{position}</td>
+                      <td className="mono">{paramNames[position] ?? `param${position}`}</td>
+                      <td className="whitespace-normal break-all">
+                        <ParamValue value={value} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      )}
+
       {logs.length > 0 && (
         <section className="card">
           <div className="card-header">
@@ -211,4 +312,15 @@ export default async function TxPage({ params }: { params: Promise<{ id: string 
       )}
     </div>
   );
+}
+
+function ParamValue({ value }: { value: unknown }) {
+  if (typeof value === "string" && /^0x[0-9a-fA-F]{40}$/.test(value.trim())) {
+    return <AddressLink address={value.trim().toLowerCase()} size={10} />;
+  }
+  if (value === null || value === undefined) return <span className="text-gray-400">null</span>;
+  if (typeof value === "object") {
+    return <span className="mono">{JSON.stringify(value)}</span>;
+  }
+  return <span className="mono">{String(value)}</span>;
 }

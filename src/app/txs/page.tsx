@@ -64,6 +64,16 @@ export default async function TxsPage({
               </span>
             )}
           </h1>
+          <a
+            className="btn btn-outline"
+            href={`/api/export/txs?${new URLSearchParams({
+              ...(params.kind ? { kind: params.kind } : {}),
+              ...(params.block ? { block: params.block } : {}),
+              ...(params.address ? { address: params.address } : {}),
+            }).toString()}`}
+          >
+            Download CSV
+          </a>
         </div>
 
         <div className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2">
