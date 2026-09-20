@@ -21,8 +21,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env files
-.env
+# env files (the committed .env holds non-secret deployment config;
+# secrets and local overrides go in .env.local / .env.*.local)
+.env.local
 .env*.local
 
 # typescript
