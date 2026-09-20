@@ -1,0 +1,28 @@
+services:
+  sanscan:
+    build: .
+    image: sanscan:latest
+    container_name: sanscan
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Point this at your SAN node REST endpoint.
+      # Inside Docker, host.docker.internal reaches a node on the host.
+      SAN_RPC_URL: ${SAN_RPC_URL:-http://host.docker.internal:8000}
+      SAN_API_TOKEN: ${SAN_API_TOKEN:-}
+      SANSCAN_DATA_DIR: /app/data
+      SANSCAN_POLL_MS: ${SANSCAN_POLL_MS:-4000}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - sanscan-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/stats"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  sanscan-data:

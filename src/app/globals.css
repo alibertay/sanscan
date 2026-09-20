@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-white text-ink-900 antialiased;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-[1320px] px-4;
+  }
+
+  .card {
+    @apply rounded-lg border border-line bg-white shadow-card;
+  }
+
+  .card-header {
+    @apply flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3;
+  }
+
+  .card-title {
+    @apply text-[15px] font-semibold text-ink-900;
+  }
+
+  .table-base {
+    @apply w-full border-collapse text-left text-[13px];
+  }
+
+  .table-base thead th {
+    @apply whitespace-nowrap border-b border-line bg-surface px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500;
+  }
+
+  .table-base tbody td {
+    @apply whitespace-nowrap border-b border-line/80 px-3 py-2 align-middle text-gray-700;
+  }
+
+  .table-base tbody tr:hover {
+    @apply bg-surface/70;
+  }
+
+  .link {
+    @apply text-link hover:text-link-dark hover:underline;
+  }
+
+  .mono {
+    @apply font-mono text-[12.5px];
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-medium leading-4;
+  }
+
+  .badge-blue {
+    @apply border-sky-200 bg-sky-50 text-sky-700;
+  }
+
+  .badge-green {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+
+  .badge-red {
+    @apply border-red-200 bg-red-50 text-red-700;
+  }
+
+  .badge-gray {
+    @apply border-gray-200 bg-gray-50 text-gray-600;
+  }
+
+  .badge-orange {
+    @apply border-amber-200 bg-amber-50 text-amber-700;
+  }
+
+  .badge-purple {
+    @apply border-violet-200 bg-violet-50 text-violet-700;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-primary {
+    @apply bg-link text-white hover:bg-link-dark;
+  }
+
+  .btn-dark {
+    @apply bg-ink-800 text-white hover:bg-ink-700;
+  }
+
+  .btn-outline {
+    @apply border border-line bg-white text-ink-800 hover:bg-surface;
+  }
+
+  .btn-ghost {
+    @apply text-link hover:bg-sky-50;
+  }
+
+  .input {
+    @apply w-full rounded-md border border-line bg-white px-3 py-2 text-[13px] text-ink-900 outline-none placeholder:text-gray-400 focus:border-link focus:ring-2 focus:ring-sky-100;
+  }
+
+  .kv-row {
+    @apply flex flex-col gap-1 border-b border-line/70 py-2.5 text-[13px] last:border-0 sm:flex-row;
+  }
+
+  .kv-key {
+    @apply w-full shrink-0 text-gray-500 sm:w-[220px];
+  }
+
+  .kv-value {
+    @apply min-w-0 break-all text-gray-800;
+  }
+
+  .stat-label {
+    @apply text-[11px] font-semibold uppercase tracking-wide text-gray-500;
+  }
+
+  .stat-value {
+    @apply mt-1 text-[15px] font-semibold text-ink-900;
+  }
+}
+
+/* thin scrollbars for code blocks */
+pre::-webkit-scrollbar,
+.table-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+pre::-webkit-scrollbar-thumb,
+.table-scroll::-webkit-scrollbar-thumb {
+  background: #cfd6dd;
+  border-radius: 4px;
+}
